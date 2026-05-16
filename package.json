@@ -9,7 +9,8 @@
     "test": "echo \"forge test will run after Foundry is installed\""
   },
   "dependencies": {
-    "@openzeppelin/contracts": "5.0.2"
+    "@openzeppelin/contracts": "5.0.2",
+    "@openzeppelin/contracts-upgradeable": "5.0.2"
   },
   "devDependencies": {
     "prettier": "^3.3.3",
