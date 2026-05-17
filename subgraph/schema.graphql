@@ -1,0 +1,151 @@
+########################################################################
+# GameFi Economy Protocol — The Graph Schema
+########################################################################
+
+# ── ResourceAMM ──────────────────────────────────────────────────────
+
+type Pool @entity {
+  id: ID!                    # contract address
+  tokenA: BigInt!
+  tokenB: BigInt!
+  reserveA: BigInt!
+  reserveB: BigInt!
+  feeBps: BigInt!
+  totalShares: BigInt!
+  totalVolumeA: BigInt!
+  totalVolumeB: BigInt!
+  swapCount: BigInt!
+  swaps: [Swap!]! @derivedFrom(field: "pool")
+  liquidityEvents: [LiquidityEvent!]! @derivedFrom(field: "pool")
+}
+
+type Swap @entity {
+  id: ID!                    # txHash-logIndex
+  pool: Pool!
+  trader: Bytes!
+  tokenIn: BigInt!
+  amountIn: BigInt!
+  tokenOut: BigInt!
+  amountOut: BigInt!
+  fee: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+type LiquidityEvent @entity {
+  id: ID!
+  pool: Pool!
+  provider: Bytes!
+  type: String!              # "ADD" | "REMOVE"
+  amountA: BigInt!
+  amountB: BigInt!
+  shares: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+# ── Crafting ─────────────────────────────────────────────────────────
+
+type Recipe @entity {
+  id: ID!                    # recipeId as string
+  outputId: BigInt!
+  outputAmount: BigInt!
+  active: Boolean!
+  craftCount: BigInt!
+  crafts: [CraftEvent!]! @derivedFrom(field: "recipe")
+}
+
+type CraftEvent @entity {
+  id: ID!
+  recipe: Recipe!
+  crafter: Bytes!
+  outputAmount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+# ── LootDrop ─────────────────────────────────────────────────────────
+
+type LootDropEvent @entity {
+  id: ID!
+  player: Bytes!
+  itemId: BigInt!
+  randomWord: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+type LootRequest @entity {
+  id: ID!                    # requestId
+  player: Bytes!
+  fulfilled: Boolean!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+# ── RentalVault ──────────────────────────────────────────────────────
+
+type Listing @entity {
+  id: ID!                    # listingId
+  lender: Bytes!
+  itemId: BigInt!
+  amount: BigInt!
+  pricePerPeriod: BigInt!
+  active: Boolean!
+  renter: Bytes
+  rentalEnd: BigInt
+  rentals: [RentalEvent!]! @derivedFrom(field: "listing")
+}
+
+type RentalEvent @entity {
+  id: ID!
+  listing: Listing!
+  renter: Bytes!
+  rentalEnd: BigInt!
+  feePaid: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+# ── Governance ───────────────────────────────────────────────────────
+
+type Proposal @entity {
+  id: ID!                    # proposalId
+  proposer: Bytes!
+  targets: [Bytes!]!
+  description: String!
+  startBlock: BigInt!
+  endBlock: BigInt!
+  # state: Pending | Active | Succeeded | Defeated | Queued | Executed | Canceled
+  state: String!
+  forVotes: BigInt!
+  againstVotes: BigInt!
+  abstainVotes: BigInt!
+  queuedAt: BigInt
+  executedAt: BigInt
+  canceledAt: BigInt
+  votes: [Vote!]! @derivedFrom(field: "proposal")
+}
+
+type Vote @entity {
+  id: ID!                    # proposalId-voter
+  proposal: Proposal!
+  voter: Bytes!
+  support: Int!              # 0=Against 1=For 2=Abstain
+  weight: BigInt!
+  reason: String!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+}
+
+# ── Player aggregate ─────────────────────────────────────────────────
+
+type Player @entity {
+  id: ID!                    # address
+  swapCount: BigInt!
+  craftCount: BigInt!
+  lootDropCount: BigInt!
+  rentalCount: BigInt!
+  proposalCount: BigInt!
+  voteCount: BigInt!
+}
