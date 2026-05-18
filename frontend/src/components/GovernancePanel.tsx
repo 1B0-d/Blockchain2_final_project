@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Contract, formatUnits, id as ethersId } from "ethers";
 import { ADDRESSES, GOVERNOR_ABI, GAME_TOKEN_ABI } from "../lib/contracts";
+import { getTxOverrides } from "../lib/tx";
 import type { JsonRpcSigner } from "ethers";
 
 interface Props {
@@ -80,7 +81,7 @@ export function GovernancePanel({ signer, address }: Props) {
     setError(""); setTxHash(""); setLoading(true);
     try {
       const to = delegateTo || address;
-      const tx = await token.delegate(to);
+      const tx = await token.delegate(to, await getTxOverrides(signer));
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
       await loadData();
@@ -94,8 +95,13 @@ export function GovernancePanel({ signer, address }: Props) {
     if (!selectedProposal) { setError("Select a proposal"); setLoading(false); return; }
     try {
       const tx = reason
-        ? await governor.castVoteWithReason(selectedProposal, support, reason)
-        : await governor.castVote(selectedProposal, support);
+        ? await governor.castVoteWithReason(
+            selectedProposal,
+            support,
+            reason,
+            await getTxOverrides(signer)
+          )
+        : await governor.castVote(selectedProposal, support, await getTxOverrides(signer));
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
       await loadData();

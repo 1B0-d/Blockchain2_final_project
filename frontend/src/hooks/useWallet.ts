@@ -10,7 +10,7 @@ export interface WalletState {
   error: string | null;
 }
 
-const BASE_SEPOLIA_CHAIN_ID = 84532;
+const ARBITRUM_SEPOLIA_CHAIN_ID = 421614;
 
 export function useWallet() {
   const [state, setState] = useState<WalletState>({
@@ -51,12 +51,12 @@ export function useWallet() {
     }
   }, []);
 
-  const switchToBaseSepolia = useCallback(async () => {
+  const switchToArbitrumSepolia = useCallback(async () => {
     if (!window.ethereum) return;
     try {
       await window.ethereum.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0x" + BASE_SEPOLIA_CHAIN_ID.toString(16) }],
+        params: [{ chainId: "0x" + ARBITRUM_SEPOLIA_CHAIN_ID.toString(16) }],
       });
     } catch {
       // Chain not added — add it
@@ -64,15 +64,16 @@ export function useWallet() {
         method: "wallet_addEthereumChain",
         params: [
           {
-            chainId: "0x" + BASE_SEPOLIA_CHAIN_ID.toString(16),
-            chainName: "Base Sepolia",
-            rpcUrls: ["https://sepolia.base.org"],
+            chainId: "0x" + ARBITRUM_SEPOLIA_CHAIN_ID.toString(16),
+            chainName: "Arbitrum Sepolia",
+            rpcUrls: ["https://sepolia-rollup.arbitrum.io/rpc"],
             nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-            blockExplorerUrls: ["https://sepolia-explorer.base.org"],
+            blockExplorerUrls: ["https://sepolia.arbiscan.io"],
           },
         ],
       });
     }
+    window.location.reload();
   }, []);
 
   // Re-connect on page reload if already authorised
@@ -83,5 +84,25 @@ export function useWallet() {
     });
   }, [connect]);
 
-  return { ...state, connect, switchToBaseSepolia, isOnBaseSepolia: state.chainId === BASE_SEPOLIA_CHAIN_ID };
+  useEffect(() => {
+    if (!window.ethereum?.on) return;
+
+    const handleChainChanged = () => window.location.reload();
+    const handleAccountsChanged = () => window.location.reload();
+
+    window.ethereum.on("chainChanged", handleChainChanged);
+    window.ethereum.on("accountsChanged", handleAccountsChanged);
+
+    return () => {
+      window.ethereum?.removeListener?.("chainChanged", handleChainChanged);
+      window.ethereum?.removeListener?.("accountsChanged", handleAccountsChanged);
+    };
+  }, []);
+
+  return {
+    ...state,
+    connect,
+    switchToArbitrumSepolia,
+    isOnArbitrumSepolia: state.chainId === ARBITRUM_SEPOLIA_CHAIN_ID,
+  };
 }

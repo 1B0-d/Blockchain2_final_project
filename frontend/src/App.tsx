@@ -27,16 +27,16 @@ export default function App() {
         <div className="wallet-section">
           {wallet.address ? (
             <div className="wallet-info">
-              {!wallet.isOnBaseSepolia && (
-                <button className="btn-warn" onClick={wallet.switchToBaseSepolia}>
-                  Switch to Base Sepolia
+              {!wallet.isOnArbitrumSepolia && (
+                <button className="btn-warn" onClick={wallet.switchToArbitrumSepolia}>
+                  Switch to Arbitrum Sepolia
                 </button>
               )}
               <span className="address">
                 {wallet.address.slice(0, 6)}…{wallet.address.slice(-4)}
               </span>
-              <span className={`chain-badge ${wallet.isOnBaseSepolia ? "ok" : "wrong"}`}>
-                {wallet.isOnBaseSepolia ? "Base Sepolia" : "Wrong network"}
+              <span className={`chain-badge ${wallet.isOnArbitrumSepolia ? "ok" : "wrong"}`}>
+                {wallet.isOnArbitrumSepolia ? "Arbitrum Sepolia" : "Wrong network"}
               </span>
             </div>
           ) : (
@@ -64,6 +64,16 @@ export default function App() {
                 {wallet.connecting ? "Connecting…" : "Connect MetaMask"}
               </button>
               {wallet.error && <p className="error">{wallet.error}</p>}
+            </div>
+          </div>
+        ) : !wallet.isOnArbitrumSepolia ? (
+          <div className="connect-prompt">
+            <div className="connect-card">
+              <h1>Wrong Network</h1>
+              <p>This deployment is on Arbitrum Sepolia.</p>
+              <button className="btn-connect large" onClick={wallet.switchToArbitrumSepolia}>
+                Switch to Arbitrum Sepolia
+              </button>
             </div>
           </div>
         ) : (

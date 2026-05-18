@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Contract, parseUnits, formatUnits } from "ethers";
 import { ADDRESSES, RESOURCE_AMM_ABI, GAME_ITEMS_ABI, ITEM_IDS, ITEM_NAMES } from "../lib/contracts";
+import { getTxOverrides } from "../lib/tx";
 import type { JsonRpcSigner } from "ethers";
 
 interface Props {
@@ -58,12 +59,16 @@ export function SwapPanel({ signer, address }: Props) {
       // Approve items contract first
       const approved = await items.isApprovedForAll(address, ADDRESSES.ResourceAMM);
       if (!approved) {
-        const tx0 = await items.setApprovalForAll(ADDRESSES.ResourceAMM, true);
+        const tx0 = await items.setApprovalForAll(
+          ADDRESSES.ResourceAMM,
+          true,
+          await getTxOverrides(signer)
+        );
         await tx0.wait();
       }
 
       const minOut = quote ? (BigInt(quote) * 95n) / 100n : 0n; // 5 % slippage
-      const tx = await amm.swap(tokenIn, BigInt(amountIn), minOut);
+      const tx = await amm.swap(tokenIn, BigInt(amountIn), minOut, await getTxOverrides(signer));
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
       setAmountIn("");

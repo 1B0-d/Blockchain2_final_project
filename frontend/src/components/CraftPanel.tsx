@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Contract, formatUnits } from "ethers";
 import { ADDRESSES, CRAFTING_ABI, GAME_VAULT_ABI, GAME_ITEMS_ABI, GAME_TOKEN_ABI, ITEM_NAMES } from "../lib/contracts";
+import { getTxOverrides } from "../lib/tx";
 import type { JsonRpcSigner } from "ethers";
 
 interface Props {
@@ -68,10 +69,14 @@ export function CraftPanel({ signer, address }: Props) {
     try {
       const approved = await items.isApprovedForAll(address, ADDRESSES.Crafting);
       if (!approved) {
-        const tx0 = await items.setApprovalForAll(ADDRESSES.Crafting, true);
+        const tx0 = await items.setApprovalForAll(
+          ADDRESSES.Crafting,
+          true,
+          await getTxOverrides(signer)
+        );
         await tx0.wait();
       }
-      const tx = await crafting.craft(selectedRecipe);
+      const tx = await crafting.craft(selectedRecipe, await getTxOverrides(signer));
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
       await loadData();
@@ -91,11 +96,15 @@ export function CraftPanel({ signer, address }: Props) {
       const assetContract = new Contract(assetAddr, GAME_TOKEN_ABI, signer);
       const allowance = await assetContract.allowance(address, ADDRESSES.GameVault);
       if (allowance < amount) {
-        const tx0 = await assetContract.approve(ADDRESSES.GameVault, amount);
+        const tx0 = await assetContract.approve(
+          ADDRESSES.GameVault,
+          amount,
+          await getTxOverrides(signer)
+        );
         await tx0.wait();
       }
 
-      const tx = await vault.deposit(amount, address);
+      const tx = await vault.deposit(amount, address, await getTxOverrides(signer));
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
       setDepositAmount("");

@@ -1,5 +1,5 @@
 # GameFi Economy Protocol
-
+link on the video: https://youtu.be/5BYizopzF2g
 Final project for Blockchain Technologies 2, Option B: a GameFi economy protocol rather
 than a full game.
 
