@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { GameItems } from "./GameItems.sol";
 
@@ -246,7 +247,7 @@ contract RentalVault is AccessControl, ReentrancyGuard, IERC1155Receiver {
     }
 
     function supportsInterface(bytes4 interfaceId)
-        public view override(AccessControl, IERC1155Receiver) returns (bool)
+        public view override(AccessControl, IERC165) returns (bool)
     {
         return super.supportsInterface(interfaceId);
     }
@@ -260,3 +261,4 @@ contract RentalVault is AccessControl, ReentrancyGuard, IERC1155Receiver {
 
     receive() external payable {}
 }
+

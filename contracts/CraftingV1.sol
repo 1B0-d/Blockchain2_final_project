@@ -135,7 +135,7 @@ contract CraftingV1 is
 
     // ───────────────────────── crafting ──────────────────────────────────────
 
-    function craft(uint256 recipeId) external nonReentrant {
+    function craft(uint256 recipeId) external virtual nonReentrant {
         if (recipeId >= nextRecipeId) revert RecipeNotFound(recipeId);
         Recipe storage r = _recipes[recipeId];
         if (!r.active) revert RecipeInactive(recipeId);

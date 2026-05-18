@@ -2,14 +2,16 @@
 pragma solidity ^0.8.24;
 
 import { Test, console2 }       from "forge-std/Test.sol";
-import { TimelockController }   from "@openzeppelin/contracts/governance/TimelockController.sol";
-import { IGovernor }            from "@openzeppelin/contracts/governance/IGovernor.sol";
+import { TimelockController }   from "openzeppelin-contracts/governance/TimelockController.sol";
+import { IGovernor }            from "openzeppelin-contracts/governance/IGovernor.sol";
 
 import { GameToken }     from "../contracts/GameToken.sol";
 import { GameItems }     from "../contracts/GameItems.sol";
 import { GameTreasury }  from "../contracts/GameTreasury.sol";
 import { GameGovernor }  from "../contracts/GameGovernor.sol";
-import { Crafting }      from "../contracts/Crafting.sol";
+import { CraftingV1 } from "../contracts/Crafting.sol";
+import { CraftingV1 as Crafting } from "../contracts/Crafting.sol";
+import { ERC1967Proxy }           from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { ResourceAMM }   from "../contracts/ResourceAMM.sol";
 import { LootDrop }      from "../contracts/LootDrop.sol";
 
@@ -70,8 +72,13 @@ abstract contract GovBase is Test {
         // 6. Deploy Treasury (timelock is admin + spender)
         treasury = new GameTreasury(address(timelock));
 
-        // 7. Deploy Crafting (deployer admin for now; we'll grant timelock later)
-        crafting = new Crafting(address(items), deployer);
+        // 7. Deploy Crafting (upgradeable proxy, deployer admin for now)
+        {
+            CraftingV1 impl = new CraftingV1();
+            bytes memory initData = abi.encodeCall(CraftingV1.initialize, (address(items), deployer));
+            ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
+            crafting = Crafting(address(proxy));
+        }
 
         // 8. Grant RECIPE_MANAGER_ROLE to timelock so DAO can set costs
         crafting.grantRole(crafting.RECIPE_MANAGER_ROLE(), address(timelock));
@@ -415,7 +422,7 @@ contract Governance_FullLifecycle is GovBase {
         uint256[] memory values    = new uint256[](1);
         bytes[]   memory calldatas = new bytes[](1);
         targets[0]   = address(treasury);
-        calldatas[0] = abi.encodeCall(treasury.releaseETH, (recipient, 1 ether));
+        calldatas[0] = abi.encodeCall(treasury.releaseEther, (recipient, 1 ether));
 
         _proposeVoteQueueExecute(targets, values, calldatas, "Grant 1 ETH to grantee");
 
@@ -510,3 +517,4 @@ contract Governance_DirectExecution is GovBase {
         );
     }
 }
+
