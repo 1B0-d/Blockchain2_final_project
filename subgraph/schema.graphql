@@ -4,7 +4,7 @@
 
 # ── ResourceAMM ──────────────────────────────────────────────────────
 
-type Pool @entity {
+type Pool @entity(immutable: false) {
   id: ID!                    # contract address
   tokenA: BigInt!
   tokenB: BigInt!
@@ -19,7 +19,7 @@ type Pool @entity {
   liquidityEvents: [LiquidityEvent!]! @derivedFrom(field: "pool")
 }
 
-type Swap @entity {
+type Swap @entity(immutable: true) {
   id: ID!                    # txHash-logIndex
   pool: Pool!
   trader: Bytes!
@@ -32,7 +32,7 @@ type Swap @entity {
   blockNumber: BigInt!
 }
 
-type LiquidityEvent @entity {
+type LiquidityEvent @entity(immutable: true) {
   id: ID!
   pool: Pool!
   provider: Bytes!
@@ -46,7 +46,7 @@ type LiquidityEvent @entity {
 
 # ── Crafting ─────────────────────────────────────────────────────────
 
-type Recipe @entity {
+type Recipe @entity(immutable: false) {
   id: ID!                    # recipeId as string
   outputId: BigInt!
   outputAmount: BigInt!
@@ -55,7 +55,7 @@ type Recipe @entity {
   crafts: [CraftEvent!]! @derivedFrom(field: "recipe")
 }
 
-type CraftEvent @entity {
+type CraftEvent @entity(immutable: true) {
   id: ID!
   recipe: Recipe!
   crafter: Bytes!
@@ -66,7 +66,7 @@ type CraftEvent @entity {
 
 # ── LootDrop ─────────────────────────────────────────────────────────
 
-type LootDropEvent @entity {
+type LootDropEvent @entity(immutable: true) {
   id: ID!
   player: Bytes!
   itemId: BigInt!
@@ -75,7 +75,7 @@ type LootDropEvent @entity {
   blockNumber: BigInt!
 }
 
-type LootRequest @entity {
+type LootRequest @entity(immutable: false) {
   id: ID!                    # requestId
   player: Bytes!
   fulfilled: Boolean!
@@ -85,7 +85,7 @@ type LootRequest @entity {
 
 # ── RentalVault ──────────────────────────────────────────────────────
 
-type Listing @entity {
+type Listing @entity(immutable: false) {
   id: ID!                    # listingId
   lender: Bytes!
   itemId: BigInt!
@@ -97,7 +97,7 @@ type Listing @entity {
   rentals: [RentalEvent!]! @derivedFrom(field: "listing")
 }
 
-type RentalEvent @entity {
+type RentalEvent @entity(immutable: true) {
   id: ID!
   listing: Listing!
   renter: Bytes!
@@ -109,7 +109,7 @@ type RentalEvent @entity {
 
 # ── Governance ───────────────────────────────────────────────────────
 
-type Proposal @entity {
+type Proposal @entity(immutable: false) {
   id: ID!                    # proposalId
   proposer: Bytes!
   targets: [Bytes!]!
@@ -127,7 +127,7 @@ type Proposal @entity {
   votes: [Vote!]! @derivedFrom(field: "proposal")
 }
 
-type Vote @entity {
+type Vote @entity(immutable: true) {
   id: ID!                    # proposalId-voter
   proposal: Proposal!
   voter: Bytes!
@@ -140,7 +140,7 @@ type Vote @entity {
 
 # ── Player aggregate ─────────────────────────────────────────────────
 
-type Player @entity {
+type Player @entity(immutable: false) {
   id: ID!                    # address
   swapCount: BigInt!
   craftCount: BigInt!

@@ -1,125 +1,66 @@
 # Requirements Coverage Matrix
 
-## Project: GameFi Economy Protocol
-**Status:** Final Project for Blockchain Technologies 2  
-**Date:** May 2026
-
----
+Project: GameFi Economy Protocol
+Option: B, GameFi economy protocol
+Status date: May 2026
 
 ## Mandatory Requirements
 
-### 1. Advanced Solidity ✓
+| Requirement | Status | File / Evidence | Notes |
+|-------------|--------|-----------------|-------|
+| ERC20Votes | Done | `contracts/GameToken.sol` | Governance voting power and checkpoints |
+| ERC20Permit | Done | `contracts/GameToken.sol` | EIP-2612 permit inherited from OpenZeppelin |
+| ERC1155 | Done | `contracts/GameItems.sol` | Resources and items |
+| ERC4626 | Done | `contracts/GameVault.sol` | Implemented, but dedicated coverage is still low |
+| UUPS upgrade | Done | `contracts/Crafting.sol`, `contracts/CraftingV2.sol`, `test/CraftingUpgrade.t.sol` | V1 -> V2 upgrade path tested |
+| CREATE/CREATE2 | Done | `contracts/ItemPoolFactory.sol`, `test/AdvancedContracts.t.sol` | Deterministic AMM pool deployment tested |
+| Yul / assembly | Done | `contracts/YulUtils.sol`, `test/AdvancedContracts.t.sol` | Solidity equivalence fuzz tests present |
+| AMM / DeFi primitive | Done | `contracts/ResourceAMM.sol`, `test/ResourceAMM.t.sol` | Swap, liquidity, fees, fuzz, invariants |
+| Chainlink price feed | Done | `contracts/ChainlinkPriceOracle.sol`, `test/AdvancedContracts.t.sol`, `test/ForkIntegration.t.sol` | Unit-tested; fork test requires `MAINNET_RPC_URL` |
+| Chainlink VRF flow | Partial | `contracts/LootDrop.sol` | VRF-compatible interface plus mock mode for local tests; real subscription deployment still needed |
+| DAO governance | Done | `contracts/GameGovernor.sol`, `contracts/GameTreasury.sol`, `test/Governance.t.sol` | Proposal, voting, queue, execute lifecycle tested |
+| Timelock | Done | `contracts/GameTreasury.sol`, `script/PostDeployCheck.s.sol` | 2-day delay and governor roles checked |
+| The Graph subgraph | Done/Partial | `subgraph/` | Schema, mappings, YAML, ABIs, codegen, and build pass; addresses must be replaced after deployment |
+| Frontend dApp | Partial | `frontend/` | Builds successfully; production contract addresses still need wiring |
+| L2 deployment | Partial | `script/Deploy.s.sol` | Script exists; actual deployment/verification not recorded in repo |
+| CI | Done | `.github/workflows/ci.yml` | Build, tests, coverage, Slither high gate, frontend build |
 
-| Component | Requirement | Status | Implementation |
-|-----------|-------------|--------|-----------------|
-| UUPS Proxy | Upgradeable contracts using UUPS pattern | ✅ Complete | `CraftingV1.sol`, `CraftingV2.sol` with proxy upgrade mechanism |
-| CREATE/CREATE2 | Factory pattern for contract creation | ✅ Complete | `ItemPoolFactory.sol` uses CREATE2 for deterministic pool deployment |
-| Yul | Low-level assembly for optimization | ✅ Complete | `YulUtils.sol` contains optimized math operations in pure Yul |
-| Gas Optimization | Efficient storage & computation | ✅ Complete | Custom AMM implementation with optimized calculations |
+## Contract Coverage
 
-### 2. Token Standards ✓
+| Contract | Status | Tests / Evidence | Notes |
+|----------|--------|------------------|-------|
+| `GameToken.sol` | Done | `test/Governance.t.sol` | Transfers, voting power, delegation through governance tests |
+| `GameItems.sol` | Done | `test/Crafting.t.sol`, `test/AdvancedContracts.t.sol` | Mint, burn, role usage indirectly tested |
+| `GameVault.sol` | Needs tests | Coverage report | Contract compiles, but coverage is currently 0% |
+| `ResourceAMM.sol` | Done | `test/ResourceAMM.t.sol` | Unit, fuzz, invariant tests passing |
+| `Crafting.sol` | Done | `test/Crafting.t.sol`, `test/CraftingUpgrade.t.sol` | Recipe and UUPS upgrade tests |
+| `CraftingV2.sol` | Done | `test/CraftingUpgrade.t.sol` | XP feature and storage preservation tested |
+| `LootDrop.sol` | Done/Partial | `test/AdvancedContracts.t.sol` | Mock loot flow tested; real VRF requires network config |
+| `RentalVault.sol` | Needs tests | Coverage report | Contract compiles, but coverage is currently 0% |
+| `ItemPoolFactory.sol` | Done | `test/AdvancedContracts.t.sol` | CREATE and CREATE2 tested |
+| `GameGovernor.sol` | Done | `test/Governance.t.sol` | Governance lifecycle tested |
+| `GameTreasury.sol` | Done | `test/Governance.t.sol` | Timelock-controlled ETH release tested |
+| `ChainlinkPriceOracle.sol` | Done | `test/AdvancedContracts.t.sol`, `test/ForkIntegration.t.sol` | Unit tests pass; fork tests skip without RPC |
+| `YulUtils.sol` | Done | `test/AdvancedContracts.t.sol` | Known values and fuzz equivalence |
 
-| Standard | Requirement | Status | Implementation | Details |
-|----------|-------------|--------|-----------------|---------|
-| ERC20 | Base fungible token | ✅ Complete | `GameToken.sol` | Basic transfer, approve, allowance |
-| ERC20Votes | Governance voting power | ✅ Complete | `GameToken.sol` | Vote delegation and checkpoints |
-| ERC20Permit | Gasless approvals | ✅ Complete | `GameToken.sol` | EIP-2612 permit functionality |
-| ERC1155 | Multi-token standard | ✅ Complete | `GameItems.sol` | Resources and items on single contract |
-| ERC4626 | Tokenized vault standard | ✅ Complete | `GameVault.sol` | Vault for protocol fees and rewards |
+## Verification Snapshot
 
-### 3. DeFi Primitive ✓
+| Command | Result |
+|---------|--------|
+| `forge build` | Pass |
+| `forge test` | Pass: `87 passed, 0 failed, 3 skipped` |
+| `forge coverage --report summary` | Pass: total line coverage `64.74%`, statement coverage `65.10%` |
+| `npm --prefix frontend run build` | Pass |
+| `npm --prefix subgraph run build` | Pass |
+| `slither . --exclude-dependencies --exclude arbitrary-send-eth,weak-prng --fail-high` | Pass |
 
-| Feature | Requirement | Status | Implementation |
-|---------|-------------|--------|-----------------|
-| AMM | Automated Market Maker | ✅ Complete | `ResourceAMM.sol` |
-| Pool Type | Constant product formula | ✅ Complete | x*y=k model |
-| Trading Fees | Protocol fee collection | ✅ Complete | 0.3% fee mechanism |
-| Slippage Protection | Minimum output protection | ✅ Complete | Max price impact validation |
-| LP Tokens | Liquidity provider rewards | ✅ Complete | ERC20 LP token minting |
+## Remaining Work Before Final Submission
 
-### 4. Oracles ✓
-
-| Oracle | Requirement | Status | Implementation | Purpose |
-|--------|-------------|--------|-----------------|---------|
-| Chainlink VRF | Verifiable randomness | ✅ Complete | `LootDrop.sol` | Random loot drop generation |
-| Chainlink Price Feed | Asset pricing | ✅ Complete | `ChainlinkPriceOracle.sol` | Price oracle with staleness check |
-| Staleness Check | Prevent stale prices | ✅ Complete | `ChainlinkPriceOracle.sol` | 1-hour max staleness threshold |
-
-### 5. Governance ✓
-
-| Component | Requirement | Status | Implementation |
-|-----------|-------------|--------|-----------------|
-| Governor | OpenZeppelin Governor contract | ✅ Complete | `GameGovernor.sol` |
-| Voting Token | ERC20Votes for vote power | ✅ Complete | `GameToken.sol` |
-| Timelock | 2-day voting delay + execution | ✅ Complete | `GameTreasury.sol` with TimelockController |
-| Parameters | DAO-controlled economy settings | ✅ Complete | Drop rates, crafting costs, fees |
-
-### 6. Indexing & Queries ✓
-
-| Entity | Requirement | Status | Indexed Events |
-|--------|-------------|--------|-----------------|
-| Swaps | Resource trades | ✅ Complete | `ResourceSwapped` from `ResourceAMM.sol` |
-| Crafting | Item creation | ✅ Complete | `ItemCrafted` from `Crafting.sol` |
-| Rentals | Item leasing | ✅ Complete | `ItemRented`, `RentalReturned` from `RentalVault.sol` |
-| Loot Drops | Randomized rewards | ✅ Complete | `LootDropped` from `LootDrop.sol` |
-| Governance | DAO votes & proposals | ✅ Complete | `ProposalCreated`, `VoteCast` from Governor |
-
-**Graph Implementation:** The Graph subgraph with 5+ entities, documented GraphQL queries for all indexed events.
-
-### 7. L2 Deployment ✓
-
-| Requirement | Status | Implementation |
-|-------------|--------|-----------------|
-| L2 Testnet Deployment | ✅ Complete | Base Sepolia or Arbitrum Sepolia |
-| Contract Verification | ✅ Complete | Block explorer verification scripts |
-| Cross-chain Support | ✅ Complete | L2 deployment via forge scripts |
-
----
-
-## Feature Completeness Matrix
-
-### Core Contracts
-
-| Contract | Core Feature | Status | Tests | Notes |
-|----------|-------------|--------|-------|-------|
-| GameToken | ERC20 governance token | ✅ | `Governance.t.sol` | Votes + Permit support |
-| GameItems | ERC1155 resources & items | ✅ | `Crafting.t.sol` | Batch minting support |
-| GameVault | ERC4626 vault | ✅ | `AdvancedContracts.t.sol` | Deposit/withdraw mechanics |
-| ResourceAMM | Constant-product AMM | ✅ | `ResourceAMM.t.sol` | Swap + liquidity functions |
-| Crafting | Recipe-based item creation | ✅ | `Crafting.t.sol` | Upgradeable via UUPS |
-| LootDrop | VRF randomized rewards | ✅ | `AdvancedContracts.t.sol` | Chainlink VRF integration |
-| RentalVault | ERC1155 item rentals | ✅ | `AdvancedContracts.t.sol` | Rental duration tracking |
-| GameGovernor | DAO governance | ✅ | `Governance.t.sol` | Proposal & voting logic |
-
-### Test Coverage
-
-| Test Suite | File | Components | Status |
-|-----------|------|-----------|--------|
-| Advanced Contracts | `AdvancedContracts.t.sol` | Vault, Loot, Rental, Oracle | ✅ Comprehensive |
-| Crafting | `Crafting.t.sol` | Crafting recipes & items | ✅ Full coverage |
-| Crafting Upgrade | `CraftingUpgrade.t.sol` | UUPS proxy upgrade path | ✅ Upgrade tests |
-| Governance | `Governance.t.sol` | Governor & voting | ✅ Proposal flow tests |
-| AMM | `ResourceAMM.t.sol` | Swaps, liquidity, fees | ✅ Edge cases |
-
----
-
-## Project Scope Completeness
-
-✅ **Smart Contracts:** All core contracts implemented  
-✅ **Token Standards:** ERC20, ERC20Votes, ERC20Permit, ERC1155, ERC4626  
-✅ **DeFi AMM:** Custom constant-product AMM with fees  
-✅ **Oracles:** Chainlink VRF + Price Feeds  
-✅ **Governance:** OpenZeppelin Governor + Timelock  
-✅ **Testing:** Unit, fuzz, invariant, and fork tests  
-✅ **Indexing:** The Graph subgraph ready  
-✅ **Frontend:** React dApp framework prepared  
-✅ **L2 Deployment:** Scripts for testnet deployment  
-
----
-
-## Summary
-
-**Total Requirements:** 7 categories  
-**Completed:** 7/7 (100%)  
-
-All mandatory blockchain requirements are satisfied with full test coverage and production-ready architecture.
+| Task | Priority | Owner Suggestion |
+|------|----------|------------------|
+| Add dedicated `GameVault` tests | Medium | Strong Solidity teammate |
+| Add dedicated `RentalVault` tests | Medium | Strong Solidity teammate |
+| Deploy to Base Sepolia or Arbitrum Sepolia | High if deployment proof is required | Repo owner |
+| Replace subgraph zero addresses after deployment | High after deployment | Repo owner |
+| Add real VRF subscription/network config | Medium | Repo owner or strong Solidity teammate |
+| Add deployed contract addresses to frontend config | High after deployment | Frontend/integration owner |

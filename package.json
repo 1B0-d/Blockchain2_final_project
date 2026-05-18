@@ -4,9 +4,11 @@
   "private": true,
   "description": "Blockchain Technologies 2 final project: GameFi economy protocol.",
   "scripts": {
-    "solc:check": "solc --base-path . --include-path node_modules --abi --bin contracts/GameToken.sol contracts/GameItems.sol contracts/GameVault.sol -o build/solc --overwrite",
-    "fmt:check": "echo \"forge fmt --check will run after Foundry is installed\"",
-    "test": "echo \"forge test will run after Foundry is installed\""
+    "build": "forge build",
+    "test": "forge test",
+    "coverage": "forge coverage --report summary",
+    "slither": "slither . --exclude-dependencies --exclude arbitrary-send-eth,weak-prng --fail-high",
+    "solc:check": "solc --base-path . --include-path node_modules --abi --bin contracts/GameToken.sol contracts/GameItems.sol contracts/GameVault.sol -o build/solc --overwrite"
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.0.2",

@@ -186,6 +186,7 @@ contract RentalVault is AccessControl, ReentrancyGuard, IERC1155Receiver {
     function reclaimItem(uint256 listingId) external nonReentrant {
         Listing storage l = _getActiveListing(listingId);
         if (!l.rented) revert NotRented(listingId);
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < l.rentalEnd) {
             revert RentalNotExpired(listingId, l.rentalEnd);
         }

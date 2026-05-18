@@ -5,8 +5,8 @@ import {
   ProposalQueued,
   ProposalExecuted,
   ProposalCanceled,
-} from "../../generated/GameGovernor/GameGovernor";
-import { Proposal, Vote } from "../../generated/schema";
+} from "../generated/GameGovernor/GameGovernor";
+import { Proposal, Vote } from "../generated/schema";
 
 export function handleProposalCreated(event: ProposalCreated): void {
   let id = event.params.proposalId.toString();

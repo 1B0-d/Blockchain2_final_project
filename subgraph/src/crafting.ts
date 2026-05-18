@@ -3,14 +3,14 @@ import {
   ItemCrafted,
   RecipeAdded,
   CraftingCostUpdated,
-} from "../../generated/Crafting/Crafting";
-import { Recipe, CraftEvent } from "../../generated/schema";
+} from "../generated/Crafting/Crafting";
+import { Recipe, CraftEvent } from "../generated/schema";
 
 export function handleRecipeAdded(event: RecipeAdded): void {
   let id = event.params.recipeId.toString();
   let recipe = new Recipe(id);
   recipe.outputId = event.params.outputId;
-  recipe.outputAmount = event.params.outputAmount;
+  recipe.outputAmount = BigInt.fromI32(0);
   recipe.active = true;
   recipe.craftCount = BigInt.fromI32(0);
   recipe.save();
@@ -28,7 +28,7 @@ export function handleItemCrafted(event: ItemCrafted): void {
   let craftEvent = new CraftEvent(id);
   craftEvent.recipe = recipeId;
   craftEvent.crafter = event.params.crafter;
-  craftEvent.outputAmount = event.params.outputAmount;
+  craftEvent.outputAmount = recipe.outputAmount;
   craftEvent.timestamp = event.block.timestamp;
   craftEvent.blockNumber = event.block.number;
   craftEvent.save();

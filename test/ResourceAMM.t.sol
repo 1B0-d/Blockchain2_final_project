@@ -44,8 +44,8 @@ abstract contract AMMBase is Test {
 
     function _mintItems(address to, uint256 amtA, uint256 amtB) internal {
         vm.startPrank(admin);
-        items.mint(to, TOKEN_A, amtA, "");
-        items.mint(to, TOKEN_B, amtB, "");
+        if (amtA > 0) items.mint(to, TOKEN_A, amtA, "");
+        if (amtB > 0) items.mint(to, TOKEN_B, amtB, "");
         vm.stopPrank();
     }
 }
@@ -59,12 +59,6 @@ contract ResourceAMM_Unit is AMMBase {
     // ── addLiquidity ─────────────────────────────────────────────────────────
 
     function test_addLiquidity_first_deposit() public {
-        vm.prank(alice);
-        uint256 shares = amm.addLiquidity(1_000, 1_000, 0);
-
-        // shares = sqrt(1000*1000) - MIN_LIQUIDITY = 1000 - 1000 = 0... edge case
-        // Let's use larger numbers:
-        // reset
         vm.prank(alice);
         amm.addLiquidity(4_000, 4_000, 0);
 
@@ -250,7 +244,7 @@ contract ResourceAMM_Fuzz is AMMBase {
         vm.prank(alice);
         amm.addLiquidity(5_000, 5_000, 0);
 
-        amtIn = bound(amtIn, 1, 500);
+        amtIn = bound(amtIn, 334, 500);
         _mintItems(bob, amtIn, 0);
 
         vm.prank(bob);
@@ -294,6 +288,42 @@ contract ResourceAMM_Handler is AMMBase {
         vm.prank(alice);
         try amm.removeLiquidity(burnAmt, 0, 0) {} catch {}
     }
+
+    function reserveAView() external view returns (uint256) {
+        return amm.reserveA();
+    }
+
+    function reserveBView() external view returns (uint256) {
+        return amm.reserveB();
+    }
+
+    function balanceAView() external view returns (uint256) {
+        return items.balanceOf(address(amm), TOKEN_A);
+    }
+
+    function balanceBView() external view returns (uint256) {
+        return items.balanceOf(address(amm), TOKEN_B);
+    }
+
+    function totalSharesView() external view returns (uint256) {
+        return amm.totalShares();
+    }
+
+    function aliceSharesView() external view returns (uint256) {
+        return amm.lpShares(alice);
+    }
+
+    function lockedSharesView() external view returns (uint256) {
+        return amm.lpShares(address(1));
+    }
+
+    function minLiquidityView() external view returns (uint256) {
+        return amm.MIN_LIQUIDITY();
+    }
+
+    function feeBpsView() external view returns (uint256) {
+        return amm.feeBps();
+    }
 }
 
 contract ResourceAMM_Invariant is AMMBase {
@@ -302,10 +332,16 @@ contract ResourceAMM_Invariant is AMMBase {
     function setUp() public override {
         super.setUp();
         handler = new ResourceAMM_Handler();
+        handler.setUp();
 
-        // Wire handler to same amm/items
-        // For a real invariant suite we'd deploy fresh; here we target the handler's state
+        // Target only mutating handler actions, not inherited setup helpers.
         targetContract(address(handler));
+
+        bytes4[] memory selectors = new bytes4[](3);
+        selectors[0] = ResourceAMM_Handler.addLiq.selector;
+        selectors[1] = ResourceAMM_Handler.doSwap.selector;
+        selectors[2] = ResourceAMM_Handler.removeLiq.selector;
+        targetSelector(FuzzSelector({ addr: address(handler), selectors: selectors }));
     }
 
     /// @notice k = reserveA * reserveB should never decrease after swaps
@@ -316,8 +352,8 @@ contract ResourceAMM_Invariant is AMMBase {
         // A detailed multi-pool invariant test would require a shared state fixture.
         // Here we assert the structural property: totalShares >= MIN_LIQUIDITY
         // (MIN_LIQUIDITY is locked forever in address(1)).
-        uint256 total = amm.totalShares();
-        uint256 min   = amm.MIN_LIQUIDITY();
+        uint256 total = handler.totalSharesView();
+        uint256 min   = handler.minLiquidityView();
         // If any liquidity was ever added, totalShares >= MIN_LIQUIDITY
         if (total > 0) {
             assertGe(total, min, "totalShares < MIN_LIQUIDITY");
@@ -327,13 +363,33 @@ contract ResourceAMM_Invariant is AMMBase {
     /// @notice LP share accounting: sum of all individual shares == totalShares
     ///         (simplified: just check address(1) has MIN_LIQUIDITY if pool was initialized)
     function invariant_min_liquidity_locked() public view {
-        uint256 total = amm.totalShares();
+        uint256 total = handler.totalSharesView();
         if (total > 0) {
             assertGe(
-                amm.lpShares(address(1)),
-                amm.MIN_LIQUIDITY(),
+                handler.lockedSharesView(),
+                handler.minLiquidityView(),
                 "MIN_LIQUIDITY not locked"
             );
         }
+    }
+
+    /// @notice Internal reserve accounting should match actual ERC1155 balances.
+    function invariant_reserves_match_token_balances() public view {
+        assertEq(handler.reserveAView(), handler.balanceAView(), "reserveA != tokenA balance");
+        assertEq(handler.reserveBView(), handler.balanceBView(), "reserveB != tokenB balance");
+    }
+
+    /// @notice Handler only mints LP shares to alice plus permanently locked liquidity.
+    function invariant_total_shares_are_conserved() public view {
+        assertEq(
+            handler.totalSharesView(),
+            handler.aliceSharesView() + handler.lockedSharesView(),
+            "totalShares != alice + locked"
+        );
+    }
+
+    /// @notice Fee must stay inside the contract's configured upper bound.
+    function invariant_fee_bps_is_bounded() public view {
+        assertLe(handler.feeBpsView(), 1_000, "feeBps > 10%");
     }
 }

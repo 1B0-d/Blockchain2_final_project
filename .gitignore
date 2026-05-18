@@ -14,7 +14,8 @@ lcov.info
 dist/
 .next/
 .vite/
+subgraph/build/
+subgraph/generated/
 
 *.log
 *.tmp
-

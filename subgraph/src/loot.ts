@@ -2,8 +2,8 @@ import { BigInt } from "@graphprotocol/graph-ts";
 import {
   LootDropped,
   LootRequested,
-} from "../../generated/LootDrop/LootDrop";
-import { LootDropEvent, LootRequest } from "../../generated/schema";
+} from "../generated/LootDrop/LootDrop";
+import { LootDropEvent, LootRequest } from "../generated/schema";
 
 export function handleLootRequested(event: LootRequested): void {
   let id = event.params.requestId.toString();

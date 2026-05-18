@@ -250,6 +250,7 @@ contract ChainlinkOracleTest is Test {
     }
 
     function test_getLatestPrice_reverts_stale() public {
+        vm.warp(MAX_STALENESS + 2);
         feed.set(2000e8, block.timestamp - MAX_STALENESS - 1, 1, 1);
         vm.expectRevert(); // StalePrice
         oracle.getLatestPrice();

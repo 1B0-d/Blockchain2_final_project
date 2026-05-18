@@ -3,8 +3,8 @@ import {
   ItemListed,
   ItemRented,
   ItemReclaimed,
-} from "../../generated/RentalVault/RentalVault";
-import { Listing, RentalEvent } from "../../generated/schema";
+} from "../generated/RentalVault/RentalVault";
+import { Listing, RentalEvent } from "../generated/schema";
 
 export function handleItemListed(event: ItemListed): void {
   let id = event.params.listingId.toString();

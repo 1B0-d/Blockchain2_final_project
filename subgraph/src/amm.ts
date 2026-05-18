@@ -4,8 +4,8 @@ import {
   LiquidityAdded,
   LiquidityRemoved,
   FeeUpdated,
-} from "../../generated/ResourceAMM/ResourceAMM";
-import { Pool, Swap, LiquidityEvent } from "../../generated/schema";
+} from "../generated/ResourceAMM/ResourceAMM";
+import { Pool, Swap, LiquidityEvent } from "../generated/schema";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 

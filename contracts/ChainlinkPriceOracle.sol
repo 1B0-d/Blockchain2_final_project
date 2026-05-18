@@ -81,6 +81,7 @@ contract ChainlinkPriceOracle is AccessControl {
 
         // ── Staleness check ──────────────────────────────────────────────────
         // updatedAt == 0 means the round has not yet been finalized.
+        // forge-lint: disable-next-line(block-timestamp)
         if (updatedAt == 0 || block.timestamp - updatedAt > maxStaleness) {
             revert StalePrice(updatedAt, maxStaleness);
         }
@@ -105,6 +106,7 @@ contract ChainlinkPriceOracle is AccessControl {
     function getLatestPriceScaled() external view returns (uint256 scaledPrice) {
         (int256 price, uint8 dec) = this.getLatestPrice();
         // price > 0 guaranteed by getLatestPrice
+        // forge-lint: disable-next-line(unsafe-typecast)
         scaledPrice = uint256(price);
         if (dec < 18) {
             scaledPrice *= 10 ** (18 - dec);

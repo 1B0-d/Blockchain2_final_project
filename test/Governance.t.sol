@@ -36,7 +36,7 @@ abstract contract GovBase is Test {
 
     // ── constants ────────────────────────────────────────────────────────────
     uint256 internal constant MIN_DELAY     = 2 days;
-    uint256 internal constant VOTING_DELAY  = 1;     // blocks
+    uint256 internal constant VOTING_DELAY  = 7_200;  // about 1 day at 12s/block
     uint256 internal constant VOTING_PERIOD = 50_400; // blocks
 
     // token amounts
@@ -109,9 +109,9 @@ abstract contract GovBase is Test {
         lootDrop.grantRole(lootDrop.DROP_MANAGER_ROLE(), address(timelock));
 
         // 11. Distribute tokens
-        token.transfer(alice, ALICE_TOKENS);
-        token.transfer(bob,   BOB_TOKENS);
-        token.transfer(carol, CAROL_TOKENS);
+        assertTrue(token.transfer(alice, ALICE_TOKENS));
+        assertTrue(token.transfer(bob, BOB_TOKENS));
+        assertTrue(token.transfer(carol, CAROL_TOKENS));
 
         vm.stopPrank();
 
@@ -176,7 +176,7 @@ contract Governance_Setup is GovBase {
     function test_governorParameters() public view {
         assertEq(governor.votingDelay(),       VOTING_DELAY);
         assertEq(governor.votingPeriod(),      VOTING_PERIOD);
-        assertEq(governor.proposalThreshold(), 1_000e18);
+        assertEq(governor.proposalThreshold(), token.totalSupply() / 100);
         // quorum: 4 % of total supply at block 1
         uint256 expectedQuorum = (token.totalSupply() * 4) / 100;
         assertEq(governor.quorum(block.number - 1), expectedQuorum);
@@ -309,7 +309,6 @@ contract Governance_Voting is GovBase {
         vm.prank(carol); governor.castVote(pid, 0);
 
         // Give deployer remainder and vote against
-        uint256 deployerBal = token.balanceOf(deployer);
         vm.prank(deployer); token.delegate(deployer);
         vm.roll(block.number + 1);
 
@@ -364,10 +363,12 @@ contract Governance_FullLifecycle is GovBase {
     // ── Proposal 2: add crafting recipe ──────────────────────────────────────
     function test_lifecycle_addCraftingRecipe() public {
         // Grant items MINTER_ROLE to crafting (setup step — done by deployer)
-        vm.prank(deployer);
-        items.grantRole(items.MINTER_ROLE(), address(crafting));
-        vm.prank(deployer);
-        items.grantRole(items.GAME_SYSTEM_ROLE(), address(crafting));
+        bytes32 minterRole = items.MINTER_ROLE();
+        bytes32 gameSystemRole = items.GAME_SYSTEM_ROLE();
+        vm.startPrank(deployer);
+        items.grantRole(minterRole, address(crafting));
+        items.grantRole(gameSystemRole, address(crafting));
+        vm.stopPrank();
 
         Crafting.Ingredient[] memory ings = new Crafting.Ingredient[](2);
         ings[0] = Crafting.Ingredient({ itemId: 1, amount: 5 }); // 5 WOOD
@@ -433,8 +434,9 @@ contract Governance_FullLifecycle is GovBase {
     // ── Proposal 5: update loot drop table ───────────────────────────────────
     function test_lifecycle_updateDropTable() public {
         // Grant lootDrop MINTER_ROLE on items
+        bytes32 minterRole = items.MINTER_ROLE();
         vm.prank(deployer);
-        items.grantRole(items.MINTER_ROLE(), address(lootDrop));
+        items.grantRole(minterRole, address(lootDrop));
 
         LootDrop.LootEntry[] memory entries = new LootDrop.LootEntry[](3);
         entries[0] = LootDrop.LootEntry({ itemId: 1, weight: 60 }); // WOOD   60 %
@@ -505,9 +507,8 @@ contract Governance_Cancellation is GovBase {
 
 contract Governance_DirectExecution is GovBase {
     /// @notice The timelock should NOT execute proposals that bypassed the governor.
-    function test_directTimelockCallReverts() public {
+    function test_directTimelockCallReverts() public view {
         // Try to call amm.setFeeBps directly through timelock without going through governor
-        bytes32 EXECUTOR_ROLE = timelock.EXECUTOR_ROLE();
         // open execution: address(0) as executor means anyone can execute
         // but they still need to have scheduled it first
         // Just verify timelock admin is no longer deployer
